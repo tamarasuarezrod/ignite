@@ -13,12 +13,12 @@ import "./i18n"
 import "./utils/ignore-warnings"
 import React, { useState, useEffect } from "react"
 import { SafeAreaProvider, initialWindowMetrics } from "react-native-safe-area-context"
-import { initFonts } from "./theme/fonts" // expo
-import * as storage from "./utils/storage"
-import { AppNavigator, useNavigationPersistence } from "./navigators"
-import { RootStore, RootStoreProvider, setupRootStore } from "./models"
-import { ToggleStorybook } from "../storybook/toggle-storybook"
-import { ErrorBoundary } from "./screens/error/error-boundary"
+import { initFonts } from "./app/theme/fonts" // expo
+import * as storage from "./app/utils/storage"
+import { AppNavigator, useNavigationPersistence } from "./app/navigators"
+import { RootStore, RootStoreProvider, setupRootStore } from "./app/models"
+import { ToggleStorybook } from "./storybook/toggle-storybook"
+import { ErrorBoundary } from "./app/screens/error/error-boundary"
 
 // This puts screens in a native ViewController or Activity. If you want fully native
 // stack navigation, use `createNativeStackNavigator` in place of `createStackNavigator`:
