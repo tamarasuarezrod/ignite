@@ -1,5 +1,5 @@
 /**
- * The app navigator (formerly "AppNavigator" and "MainNavigator") is used for the primary
+ * The app navigator is used for the primary
  * navigation flows of your app.
  * Generally speaking, it will contain an auth flow (registration, login, forgot password)
  * and a "main" flow which the user will use once logged in.
@@ -7,60 +7,46 @@
 import React from "react"
 import { useColorScheme } from "react-native"
 import { NavigationContainer, DefaultTheme, DarkTheme } from "@react-navigation/native"
-import { createNativeStackNavigator } from "@react-navigation/native-stack"
-import { WelcomeScreen, DemoScreen, DemoListScreen } from "../screens"
-import { navigationRef, useBackButtonHandler } from "./navigation-utilities"
+import * as storage from "../utils/storage"
+import { useFonts } from "expo-font"
+import { navigationRef, useBackButtonHandler, useNavigationPersistence } from "./utilities"
+import { MainStack } from "./main-stack"
 
-/**
- * This type allows TypeScript to know what routes are defined in this navigator
- * as well as what properties (if any) they might take when navigating to them.
- *
- * If no params are allowed, pass through `undefined`. Generally speaking, we
- * recommend using your MobX-State-Tree store(s) to keep application state
- * rather than passing state through navigation params.
- *
- * For more information, see this documentation:
- *   https://reactnavigation.org/docs/params/
- *   https://reactnavigation.org/docs/typescript#type-checking-the-navigator
- */
-export type NavigatorParamList = {
-  welcome: undefined
-  demo: undefined
-  demoList: undefined
-  // 🔥 Your screens go here
-}
-
-// Documentation: https://reactnavigation.org/docs/stack-navigator/
-const Stack = createNativeStackNavigator<NavigatorParamList>()
-
-const AppStack = () => {
-  return (
-    <Stack.Navigator
-      screenOptions={{
-        headerShown: false,
-      }}
-      initialRouteName="welcome"
-    >
-      <Stack.Screen name="welcome" component={WelcomeScreen} />
-      <Stack.Screen name="demo" component={DemoScreen} />
-      <Stack.Screen name="demoList" component={DemoListScreen} />
-      {/** 🔥 Your screens go here */}
-    </Stack.Navigator>
-  )
-}
-
-interface NavigationProps extends Partial<React.ComponentProps<typeof NavigationContainer>> {}
-
-export const AppNavigator = (props: NavigationProps) => {
+export const AppNavigator = () => {
   const colorScheme = useColorScheme()
   useBackButtonHandler(canExit)
+
+  // Add your fonts here.
+  // Refer to ./assets/fonts/custom-fonts.md for instructions.
+  const [fontsLoaded, _fontError] = useFonts({
+    // Montserrat: require("../assets/fonts/Montserrat.ttf"),
+    // "Montserrat-Regular": require("../assets/fonts/Montserrat-Regular.ttf"),
+  })
+
+  // load the navigation state from async storage
+  const {
+    initialNavigationState,
+    onNavigationStateChange,
+    isRestored: isNavigationStateRestored,
+  } = useNavigationPersistence(storage, "NAVIGATION_STATE")
+
+  // Before we show the app, we have to wait for our state to be ready.
+  // In the meantime, don't render anything. This will be the background
+  // color set in native by rootView's background color.
+  // In iOS: application:didFinishLaunchingWithOptions:
+  // In Android: https://stackoverflow.com/a/45838109/204044
+  // In Expo: https://docs.expo.dev/versions/latest/sdk/splash-screen
+  // You can replace with your own loading component if you wish.
+  if (!isNavigationStateRestored || !fontsLoaded) return null
+
   return (
     <NavigationContainer
       ref={navigationRef}
       theme={colorScheme === "dark" ? DarkTheme : DefaultTheme}
-      {...props}
+      initialState={initialNavigationState}
+      onStateChange={onNavigationStateChange}
     >
-      <AppStack />
+      <MainStack />
     </NavigationContainer>
   )
 }
