@@ -208,7 +208,7 @@ function removeOtherLockfiles(options: PackageOptions) {
     lockfilesToRemove.splice(0, 1)
   }
 
-  lockfilesToRemove.map((lockfile) => {
+  lockfilesToRemove.forEach((lockfile) => {
     if (filesystem.exists(lockfile)) {
       return filesystem.remove(lockfile)
     }

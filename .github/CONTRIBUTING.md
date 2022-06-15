@@ -40,7 +40,7 @@ Now you're ready to check out a new branch and get hacking on Ignite CLI!
 
 ## Source Code
 
-To get familiarized with Ignite CLI's source code, read the [Tour of Ignite CLI's source code](../docs/Tour-of-Ignite.md) (TODO! currently out of date).
+To get familiarized with Ignite CLI's source code, read the [Tour of Ignite CLI's source code](../docs/Tour-of-Ignite.md).
 
 ## How to Build and Run App
 
@@ -64,3 +64,14 @@ $ yarn test
 ```sh
 $ yarn lint
 ```
+
+### Why are there 3 lockfiles?
+
+This is to speed up `ignite-cli new`. You'll want to make sure that the lockfiles are all up-to-date before
+you push them up to CI. You can do that like this:
+
+```
+yarn refresh-lockfiles
+```
+
+This should update all three lockfiles.

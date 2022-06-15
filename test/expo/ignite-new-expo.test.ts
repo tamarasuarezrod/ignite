@@ -17,7 +17,7 @@ afterEach(() => {
 
 describe("Igniting new expo app! 🔥", () => {
   test(`ignite new ${EXPO_APP_NAME} --expo`, async () => {
-    const result = await runIgnite(`new ${EXPO_APP_NAME} --expo --debug --skip-deps`, {
+    const result = await runIgnite(`new ${EXPO_APP_NAME} --expo --debug`, {
       pre: `cd ${tempDir}`,
       post: `cd ${originalDir}`,
     })
