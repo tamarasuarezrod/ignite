@@ -13,7 +13,7 @@ import "./i18n"
 import "./utils/ignore-warnings"
 import React from "react"
 import { SafeAreaProvider, initialWindowMetrics } from "react-native-safe-area-context"
-import { AppNavigator, useNavigationPersistence } from "./navigators"
+import { AppNavigator } from "./navigators"
 import { ToggleStorybook } from "../storybook/toggle-storybook"
 import { ErrorBoundary } from "./screens/error/error-boundary"
 

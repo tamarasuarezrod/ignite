@@ -8,7 +8,6 @@ yarn-error.log
 lerna-debug.log
 node_modules
 .vscode/*
-package-lock.json
 
 # TS build
 /build
@@ -17,5 +16,10 @@ coverage
 # This is at root because we don't want to ignore it in
 # newly spun-up apps, but we do want to ignore it in
 # Ignite's source repo.
-boilerplate/yarn.lock
 boilerplate/.gitignore.template
+
+# checking in these files for faster ... ci, I guess
+# package-lock.json
+# boilerplate/yarn.lock
+# pnpm-lock.yaml
+

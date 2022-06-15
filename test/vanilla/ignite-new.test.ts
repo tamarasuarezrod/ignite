@@ -29,7 +29,7 @@ describe("Checking for ignite. 🪔", () => {
 
 describe("Igniting new app! 🔥\nGo get a coffee or something. This is gonna take a while.", () => {
   test(`ignite new ${APP_NAME}`, async () => {
-    const result = await runIgnite(`new ${APP_NAME} --debug`, {
+    const result = await runIgnite(`new ${APP_NAME} --debug --skip-deps`, {
       pre: `cd ${tempDir}`,
       post: `cd ${originalDir}`,
     })
@@ -67,7 +67,16 @@ describe("Igniting new app! 🔥\nGo get a coffee or something. This is gonna ta
   })
 })
 
-const ignoreFolders = ["/xcuserdata", ".git", "node_modules", "Pods", "/build"]
+const ignoreFolders = [
+  "/xcuserdata",
+  ".git",
+  "node_modules",
+  "Pods",
+  "/build",
+  "package-lock.json",
+  "yarn.lock",
+  "pnpm-lock.yaml",
+]
 
 async function checkForLeftoverHelloWorld(filePath: string) {
   // ignore some folders

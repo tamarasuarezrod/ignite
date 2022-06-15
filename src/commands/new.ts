@@ -1,7 +1,7 @@
 import { GluegunToolbox } from "../types"
 import { spawnProgress } from "../tools/spawn"
 import { isAndroidInstalled, copyBoilerplate, renameReactNativeApp } from "../tools/react-native"
-import { packager } from "../tools/packager"
+import { PackageOptions, packager } from "../tools/packager"
 import {
   command,
   direction,
@@ -80,7 +80,7 @@ export default {
     // check if a packager is provided, or detect one
     // we pass in expo because we can't use pnpm if we're using expo
     const packagerName = parameters.options.packager || packager.detectPackager({ expo })
-    const packagerOptions = { expo, packagerName }
+    const packagerOptions: PackageOptions = { expo, packagerName, silent: !debug, frozen: true }
 
     const ignitePath = path(`${meta.src}`, "..")
     const boilerplatePath = path(ignitePath, "boilerplate")
@@ -149,8 +149,8 @@ export default {
         excluded: [
           ".vscode",
           "node_modules",
-          "yarn.lock",
           ".expo.",
+          // "yarn.lock",
 
           // Unfortunately, we can't exclude nested files and folders yet
           // "ios/Pods",
@@ -239,14 +239,6 @@ export default {
       // use Detox Expo reload file
       remove("./e2e/reload.js")
       rename("./e2e/reload.expo.js", "reload.js")
-
-      startSpinner("Unboxing npm dependencies")
-      await packager.install({ ...packagerOptions, onProgress: log })
-      stopSpinner("Unboxing npm dependencies", "🧶")
-
-      // for some reason we need to do this, or we get an error about duplicate RNCSafeAreaProviders
-      // see https://github.com/th3rdwave/react-native-safe-area-context/issues/110#issuecomment-668864576
-      await packager.add(`react-native-safe-area-context`, packagerOptions)
     } else {
       // remove the Expo-specific files -- not needed
       remove(`./bin/downloadExpoApp.sh`)
@@ -255,11 +247,18 @@ export default {
       remove("./index.expo.js")
       remove("./babel.config.expo.js")
       remove("./metro.config.expo.js")
+    }
 
-      // pnpm/yarn/npm install it
+    // remove lockfiles we aren't going to use
+    packager.removeOtherLockfiles(packagerOptions)
+
+    if (!parameters.options.skipDeps) {
       startSpinner("Unboxing npm dependencies")
       await packager.install({ ...packagerOptions, onProgress: log })
       stopSpinner("Unboxing npm dependencies", "🧶")
+    } else {
+      startSpinner("Skipping npm dependencies")
+      stopSpinner("Skipping npm dependencies", "🧶")
     }
 
     // remove the expo-only package.json
@@ -283,15 +282,24 @@ export default {
       stopSpinner(" Writing your app name in the sand", "🏝")
 
       // install pods
-      startSpinner("Baking CocoaPods")
-      await spawnProgress(`npx pod-install@${deps.podInstall}`, {
-        onProgress: log,
-      })
-      stopSpinner("Baking CocoaPods", "☕️")
+      if (!parameters.options.skipDeps) {
+        startSpinner("Baking CocoaPods")
+        await spawnProgress(`npx pod-install@${deps.podInstall}`, {
+          onProgress: log,
+        })
+        stopSpinner("Baking CocoaPods", "☕️")
+      } else {
+        startSpinner("Skipping CocoaPods")
+        stopSpinner("Skipping CocoaPods", "☕️")
+      }
     }
 
     // Make sure all our modifications are formatted nicely
-    await packager.run("format", { ...packagerOptions, silent: !debug })
+    if (!parameters.options.skipDeps) {
+      startSpinner("Beautifying the code")
+      await packager.run("format", { ...packagerOptions, silent: !debug })
+      stopSpinner("Beautifying the code", "💅")
+    }
 
     // commit any changes
     if (parameters.options.git !== false) {
@@ -326,6 +334,12 @@ export default {
     p()
     direction(`To get started:`)
     command(`  cd ${projectName}`)
+
+    // if skipDeps, need to tell them to install manually
+    if (parameters.options.skipDeps) {
+      command(`  ${packager.installCmd({})}`)
+    }
+
     if (expo) {
       command(`  ${packager.runCmd("start", packagerOptions)}`)
     } else {

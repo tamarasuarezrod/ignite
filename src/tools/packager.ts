@@ -1,17 +1,18 @@
-import { system } from "gluegun"
+import { system, filesystem } from "gluegun"
 import { spawnProgress } from "./spawn"
 
 // we really need a packager core extension on Gluegun
 // in the meantime, we'll use this hacked together version
 
 // Expo doesn't support pnpm, so we'll use yarn or npm
-type PackageOptions =
+export type PackageOptions =
   | {
       packagerName?: "npm" | "yarn" | "pnpm"
       dev?: boolean
       expo?: false
       global?: boolean
       silent?: boolean
+      frozen?: boolean
     }
   | {
       packagerName?: "npm" | "yarn"
@@ -19,6 +20,7 @@ type PackageOptions =
       expo?: true
       global?: boolean
       silent?: boolean
+      frozen?: boolean
     }
 
 type PackageRunOptions = PackageOptions & {
@@ -124,15 +126,15 @@ function removeCmd(pkg: string, options: PackageOptions = packageInstallOptions)
  */
 function installCmd(options: PackageRunOptions) {
   const silent = options.silent ? " --silent" : ""
+  const frozen = options.frozen ? " --frozen-lockfile" : ""
 
-  if (options.expo) {
-    return `npx expo-cli install${silent}`
-  } else if (options.packagerName === "pnpm") {
-    return `pnpm install${silent}`
+  if (options.packagerName === "pnpm" && !options.expo) {
+    // can't use pnpm with Expo (yet)
+    return `pnpm install${silent}${frozen}`
   } else if (options.packagerName === "yarn") {
-    return `yarn install${silent}`
+    return `yarn install${silent}${frozen}`
   } else if (options.packagerName === "npm") {
-    return `npm install${silent}`
+    return `npm ${frozen ? "ci" : "install"}${silent}`
   } else {
     return installCmd({ ...options, expo: false, packagerName: detectPackager(options) })
   }
@@ -189,6 +191,30 @@ function runCmd(command: string, options: PackageOptions) {
   }
 }
 
+function removeOtherLockfiles(options: PackageOptions) {
+  const lockfilesToRemove = ["package-lock.json", "yarn.lock", "pnpm-lock.yaml"]
+
+  const packagerName = options.packagerName
+
+  if (!packagerName) {
+    return removeOtherLockfiles({ packagerName: detectPackager(options) })
+  }
+
+  if (packagerName === "pnpm") {
+    lockfilesToRemove.splice(2, 1)
+  } else if (packagerName === "yarn") {
+    lockfilesToRemove.splice(1, 1)
+  } else {
+    lockfilesToRemove.splice(0, 1)
+  }
+
+  lockfilesToRemove.map((lockfile) => {
+    if (filesystem.exists(lockfile)) {
+      return filesystem.remove(lockfile)
+    }
+  })
+}
+
 export const packager = {
   run: async (command: string, options: PackageRunOptions = packageInstallOptions) => {
     return spawnProgress(`${runCmd(command, options)}`, {
@@ -220,4 +246,5 @@ export const packager = {
   runCmd,
   addCmd,
   installCmd,
+  removeOtherLockfiles,
 }
