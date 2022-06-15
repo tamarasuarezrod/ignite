@@ -34,7 +34,7 @@
     "test": "yarn build && yarn lint && jest && yarn clean",
     "watch": "jest --watch",
     "coverage": "jest --coverage",
-    "ci:prep": "yarn build && yarn ci:lint",
+    "ci:prep": "yarn build && yarn ci:lint && yarn refresh-lockfiles",
     "ci:lint": "eslint src test --ext .ts && yarn format",
     "ci:test:expo": "jest ./test/expo",
     "ci:test:vanilla": "jest ./test/vanilla",

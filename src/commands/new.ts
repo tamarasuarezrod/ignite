@@ -11,6 +11,7 @@ import {
   startSpinner,
   stopSpinner,
   clearSpinners,
+  warning,
 } from "../tools/pretty"
 
 // CLI tool versions we support
@@ -38,6 +39,9 @@ export default {
       debug && info(` ${m}`)
       return m
     }
+
+    // install deps? Default false as of Ignite-CLI v8
+    const installDeps = Boolean(parameters.options.installDeps)
 
     // log raw parameters for debugging
     log(`ignite command: ${parameters.argv.join(" ")}`)
@@ -80,7 +84,7 @@ export default {
     // check if a packager is provided, or detect one
     // we pass in expo because we can't use pnpm if we're using expo
     const packagerName = parameters.options.packager || packager.detectPackager({ expo })
-    const packagerOptions: PackageOptions = { expo, packagerName, silent: !debug, frozen: true }
+    const packagerOptions: PackageOptions = { expo, packagerName, silent: !debug }
 
     const ignitePath = path(`${meta.src}`, "..")
     const boilerplatePath = path(ignitePath, "boilerplate")
@@ -252,13 +256,13 @@ export default {
     // remove lockfiles we aren't going to use
     packager.removeOtherLockfiles(packagerOptions)
 
-    if (!parameters.options.skipDeps) {
+    if (installDeps) {
       startSpinner("Unboxing npm dependencies")
       await packager.install({ ...packagerOptions, onProgress: log })
       stopSpinner("Unboxing npm dependencies", "🧶")
     } else {
-      startSpinner("Skipping npm dependencies")
-      stopSpinner("Skipping npm dependencies", "🧶")
+      startSpinner("Skipping install npm dependencies (pass --install-deps to install)")
+      stopSpinner("Skipping install npm dependencies (pass --install-deps to install)", "🧶")
     }
 
     // remove the expo-only package.json
@@ -282,7 +286,7 @@ export default {
       stopSpinner(" Writing your app name in the sand", "🏝")
 
       // install pods
-      if (!parameters.options.skipDeps) {
+      if (installDeps) {
         startSpinner("Baking CocoaPods")
         await spawnProgress(`npx pod-install@${deps.podInstall}`, {
           onProgress: log,
@@ -295,7 +299,7 @@ export default {
     }
 
     // Make sure all our modifications are formatted nicely
-    if (!parameters.options.skipDeps) {
+    if (installDeps) {
       startSpinner("Beautifying the code")
       await packager.run("format", { ...packagerOptions, silent: !debug })
       stopSpinner("Beautifying the code", "💅")
@@ -335,8 +339,8 @@ export default {
     direction(`To get started:`)
     command(`  cd ${projectName}`)
 
-    // if skipDeps, need to tell them to install manually
-    if (parameters.options.skipDeps) {
+    // if not installing deps, need to tell them to install manually
+    if (!installDeps) {
       command(`  ${packager.installCmd({})}`)
     }
 
@@ -357,20 +361,16 @@ export default {
       }
     }
 
-    // React Native Colo Loco is no longer installed with Ignite, but
-    // we will give instructions on how to install it if they
-    // pass in `--colo-loco`
-    const coloLoco = Boolean(parameters.options.coloLoco)
-
-    if (coloLoco) {
+    // if not installing deps, need to give them an additional warning
+    if (!installDeps) {
       p()
-      direction(`React Native Colo Loco`)
-      p("React Native Colo Loco is no longer installed by default.")
-      p("(More info: https://github.com/jamonholmgren/react-native-colo-loco)")
-      p("However, you can install it with the following commands in your app folder:")
+      warning(`⚠️ WARNING ⚠️`)
+      warning(`  As of Ignite version 8, dependencies are no longer automatically installed.`)
+      warning(`  If you don't manually install dependencies, you'll get errors when you try`)
+      warning(`  to run your app!`)
       p()
-      command(`  ${packager.addCmd("-g react-native-colo-loco")}`)
-      command(`  ${packager.runCmd("install-colo-loco", packagerOptions)}`)
+      direction(`To install dependencies, cd into your app and run:`)
+      command(`  ${packager.installCmd({})}`)
     }
 
     p()

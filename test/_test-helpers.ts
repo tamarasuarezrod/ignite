@@ -63,7 +63,7 @@ export async function testSpunUpApp(appPath: string, originalDir: string) {
   // check the app.tsx file
   const appJS = filesystem.read(`${appPath}/app/app.tsx`)
   expect(appJS).toContain("export default App")
-  expect(appJS).toContain("RootStore")
+  expect(appJS).toContain("AppNavigator")
 
   // now lets test generators too, since we have a properly spun-up app!
   // components
