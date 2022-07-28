@@ -73,6 +73,12 @@ export async function renameReactNativeApp(
   const oldnamesnake = oldnamelower.replace(/[^a-z0-9]/g, "_").toUpperCase()
   const newnamesnake = newnamelower.replace(/[^a-z0-9]/g, "_").toUpperCase()
 
+  // App name displayed
+  const androidOldName = '"app_name", "(.*) - (.*)"'
+  const androidNewName = `"app_name", "${newName} - $2"`
+  const iOSOldName = 'PRODUCT_NAME = "(.*) - (.*)"'
+  const iOSNewName =  `PRODUCT_NAME = "${newName} - $2"`
+
   async function rename(oldFile: string, newFile: string) {
     log(`Renaming ${oldFile} to ${newFile}`)
     return filesystem.renameAsync(oldFile, newFile)
@@ -116,6 +122,9 @@ export async function renameReactNativeApp(
     ])
   }
 
+  // list of schemes, there's one for each environment
+  const schemesList = await filesystem.listAsync(path(`ios/${newName}.xcodeproj/xcshareddata/xcschemes/`))
+
   // here's a list of all the files to patch the name in
   const filesToPatch = [
     `app.json`,
@@ -140,11 +149,11 @@ export async function renameReactNativeApp(
     `ios/Podfile`,
     `ios/${newName}/Info.plist`,
     `ios/${newName}.xcodeproj/project.pbxproj`,
-    `ios/${newName}.xcodeproj/xcshareddata/xcschemes/${newName}.xcscheme`,
     `ios/${newName}.xcworkspace/contents.xcworkspacedata`,
     `ios/${newName}Tests/${newName}Tests.m`,
     `ios/${newName}/AppDelegate.mm`,
     `ios/${newName}/LaunchScreen.storyboard`,
+    ...(schemesList.map(subdirectory=>`ios/${newName}.xcodeproj/xcshareddata/xcschemes/${subdirectory}`)),
   ]
 
   // patch the files
@@ -165,6 +174,8 @@ export async function renameReactNativeApp(
         .replace(new RegExp(oldnamesnake, "g"), newnamesnake)
         .replace(new RegExp(oldName, "g"), newName)
         .replace(new RegExp(oldnamelower, "g"), newnamelower)
+        .replace(new RegExp(androidOldName, "g" ), androidNewName)
+        .replace(new RegExp(iOSOldName, "g"), iOSNewName)
 
       // write the new content back to the file
       await filesystem.writeAsync(file, newContent, { atomic: true })
